@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Json-server</title>
+    <link href="./css/main.css" rel="stylesheet" />
+</head>
+<body>
+    <h1 id="json-server-nodejs-ci">JSON Server</h1>
+    <p>Get a full fake REST API with <strong>zero coding</strong> in <strong>less than 30 seconds</strong> (seriously)</p>
+    <h2 id="table-of-contents">Table of contents</h2>
+    <!-- toc -->
+    <ul>
+    <li><a href="#getting-started">Getting started</a></li>
+    <li>
+        <a href="#routes">Routes</a>
+        <ul>
+            <li><a href="#plural-routes">Plural routes</a></li>
+            <li><a href="#singular-routes">Singular routes</a></li>
+            <li><a href="#filter">Filter</a></li>
+            <li><a href="#paginate">Paginate</a></li>
+            <li><a href="#sort">Sort</a></li>
+            <li><a href="#slice">Slice</a></li>
+            <li><a href="#operators">Operators</a></li>
+            <li><a href="#full-text-search">Full-text search</a></li>
+            <li><a href="#relationships">Relationships</a></li>
+            <li><a href="#database">Database</a></li>
+            <li><a href="#homepage">Homepage</a></li>
+        </ul>
+    </li>
+    <li>
+        <a href="#extras">Extras</a>
+        <ul>
+            <li><a href="#static-file-server">Static file server</a></li>
+            <li><a href="#alternative-port">Alternative port</a></li>
+            <li><a href="#access-from-anywhere">Access from anywhere</a></li>
+            <li><a href="#remote-schema">Remote schema</a></li>
+            <li><a href="#generate-random-data">Generate random data</a></li>
+            <li><a href="#https">HTTPS</a></li>
+            <li><a href="#add-custom-routes">Add custom routes</a></li>
+            <li><a href="#add-middlewares">Add middlewares</a></li>
+            <li><a href="#cli-usage">CLI usage</a></li>
+            <li>
+                <a href="#module">Module</a>
+                <ul>
+                <li><a href="#simple-example">Simple example</a></li>
+                <li><a href="#custom-routes-example">Custom routes example</a></li>
+                <li><a href="#access-control-example">Access control example</a></li>
+                <li><a href="#custom-output-example">Custom output example</a></li>
+                <li><a href="#rewriter-example">Rewriter example</a></li>
+                <li><a href="#mounting-json-server-on-another-endpoint-example">Mounting JSON Server on another endpoint example</a></li>
+                <li><a href="#api">API</a></li>
+                </ul>
+            </li>
+            <li><a href="#deployment">Deployment</a></li>
+        </ul>
+    </li>
+    </ul>
+    <!-- tocstop -->
+    <h2 id="getting-started">Getting started</h2>
+    <p>Install JSON Server </p>
+    <pre class="box-x" class="box-x"><code>npm install -g json-server
+    </code></pre>
+    <p>Create a <code>db.json</code> file with some data</p>
+    <pre class="box-x"><code class="language-json">{
+    &quot;posts&quot;: [
+        { &quot;id&quot;: 1, &quot;title&quot;: &quot;json-server&quot;, &quot;author&quot;: &quot;typicode&quot; }
+    ],
+    &quot;comments&quot;: [
+        { &quot;id&quot;: 1, &quot;body&quot;: &quot;some comment&quot;, &quot;postId&quot;: 1 }
+    ],
+    &quot;profile&quot;: { &quot;name&quot;: &quot;typicode&quot; }
+    }
+    </code></pre>
+    <p>Start JSON Server</p>
+    <pre class="box-x"><code class="language-bash">json-server --watch db.json
+    </code></pre>
+    <p>Now if you go to <a href="http://localhost:3000/posts/1">http://localhost:3000/posts/1</a>, you&#39;ll get</p>
+    <pre class="box-x"><code class="language-json">{ &quot;id&quot;: 1, &quot;title&quot;: &quot;json-server&quot;, &quot;author&quot;: &quot;typicode&quot; }
+    </code></pre>
+    <p>Also when doing requests, it&#39;s good to know that:</p>
+    <ul>
+    <li>If you make POST, PUT, PATCH or DELETE requests, changes will be automatically and safely saved to <code>db.json</code> using <a href="https://truonghoailinh3103.github.io/Lowdb">lowdb</a>.</li>
+    <li>Your request body JSON should be object enclosed, just like the GET output. (for example <code>{&quot;name&quot;: &quot;Foobar&quot;}</code>)</li>
+    <li>Id values are not mutable. Any <code>id</code> value in the body of your PUT or PATCH request will be ignored. Only a value set in a POST request will be respected, but only if not already taken.</li>
+    <li>A POST, PUT or PATCH request should include a <code>Content-Type: application/json</code> header to use the JSON in the request body. Otherwise it will return a 2XX status code, but without changes being made to the data.</li>
+    </ul>
+    <h2 id="routes">Routes</h2>
+    <p>Based on the previous <code>db.json</code> file, here are all the default routes. You can also add <a href="#add-custom-routes">other routes</a> using <code>--routes</code>.</p>
+    <h3 id="plural-routes">Plural routes</h3>
+    <pre class="box-x"><code>GET    /posts
+    GET    /posts/1
+    POST   /posts
+    PUT    /posts/1
+    PATCH  /posts/1
+    DELETE /posts/1
+    </code></pre>
+    <h3 id="singular-routes">Singular routes</h3>
+    <pre class="box-x"><code>GET    /profile
+    POST   /profile
+    PUT    /profile
+    PATCH  /profile
+    </code></pre>
+    <h3 id="filter">Filter</h3>
+    <p>Use <code>.</code> to access deep properties</p>
+    <pre class="box-x"><code>GET /posts?title=json-server&amp;author=typicode
+    GET /posts?id=1&amp;id=2
+    GET /comments?author.name=typicode
+    </code></pre>
+    <h3 id="paginate">Paginate</h3>
+    <p>Use <code>_page</code> and optionally <code>_limit</code> to paginate returned data.</p>
+    <p>In the <code>Link</code> header you&#39;ll get <code>first</code>, <code>prev</code>, <code>next</code> and <code>last</code> links.</p>
+    <pre class="box-x"><code>GET /posts?_page=7
+    GET /posts?_page=7&amp;_limit=20
+    </code></pre>
+    <p><em>10 items are returned by default</em></p>
+    <h3 id="sort">Sort</h3>
+    <p>Add <code>_sort</code> and <code>_order</code> (ascending order by default)</p>
+    <pre class="box-x"><code>GET /posts?_sort=views&amp;_order=asc
+    GET /posts/1/comments?_sort=votes&amp;_order=asc
+    </code></pre>
+    <p>For multiple fields, use the following format:</p>
+    <pre class="box-x"><code>GET /posts?_sort=user,views&amp;_order=desc,asc
+    </code></pre>
+    <h3 id="slice">Slice</h3>
+    <p>Add <code>_start</code> and <code>_end</code> or <code>_limit</code> (an <code>X-Total-Count</code> header is included in the response)</p>
+    <pre class="box-x"><code>GET /posts?_start=20&amp;_end=30
+    GET /posts/1/comments?_start=20&amp;_end=30
+    GET /posts/1/comments?_start=20&amp;_limit=10
+    </code></pre>
+    <p><em>Works exactly as <a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/slice">Array.slice</a> (i.e. <code>_start</code> is inclusive and <code>_end</code> exclusive)</em></p>
+    <h3 id="operators">Operators</h3>
+    <p>Add <code>_gte</code> or <code>_lte</code> for getting a range</p>
+    <pre class="box-x"><code>GET /posts?views_gte=10&amp;views_lte=20
+    </code></pre>
+    <p>Add <code>_ne</code> to exclude a value</p>
+    <pre class="box-x"><code>GET /posts?id_ne=1
+    </code></pre>
+    <p>Add <code>_like</code> to filter (RegExp supported)</p>
+    <pre class="box-x"><code>GET /posts?title_like=server
+    </code></pre>
+    <h3 id="full-text-search">Full-text search</h3>
+    <p>Add <code>q</code></p>
+    <pre class="box-x"><code>GET /posts?q=internet
+    </code></pre>
+    <h3 id="relationships">Relationships</h3>
+    <p>To include children resources, add <code>_embed</code></p>
+    <pre class="box-x"><code>GET /posts?_embed=comments
+    GET /posts/1?_embed=comments
+    </code></pre>
+    <p>To include parent resource, add <code>_expand</code></p>
+    <pre class="box-x"><code>GET /comments?_expand=post
+    GET /comments/1?_expand=post
+    </code></pre>
+    <p>To get or create nested resources (by default one level, <a href="#add-custom-routes">add custom routes</a> for more)</p>
+    <pre class="box-x"><code>GET  /posts/1/comments
+    POST /posts/1/comments
+    </code></pre>
+    <h3 id="database">Database</h3>
+    <pre class="box-x"><code>GET /db
+    </code></pre>
+    <h3 id="homepage">Homepage</h3>
+    <p>Returns default index file or serves <code>./public</code> directory</p>
+    <pre class="box-x"><code>GET /
+    </code></pre>
+    <h2 id="extras">Extras</h2>
+    <h3 id="static-file-server">Static file server</h3>
+    <p>You can use JSON Server to serve your HTML, JS and CSS, simply create a <code>./public</code> directory
+    or use <code>--static</code> to set a different static files directory.
+    </p>
+    <pre class="box-x"><code class="language-bash">mkdir public
+    echo &#39;hello world&#39; &gt; public/index.html
+    json-server db.json
+    </code></pre>
+    <pre class="box-x"><code class="language-bash">json-server db.json --static ./some-other-dir
+    </code></pre>
+    <h3 id="alternative-port">Alternative port</h3>
+    <p>You can start JSON Server on other ports with the <code>--port</code> flag:</p>
+    <pre class="box-x"><code class="language-bash">$ json-server --watch db.json --port 3004
+    </code></pre>
+    <h3 id="access-from-anywhere">Access from anywhere</h3>
+    <p>You can access your fake API from anywhere using CORS and JSONP.</p>
+    <h3 id="remote-schema">Remote schema</h3>
+    <p>You can load remote schemas.</p>
+    <pre class="box-x"><code class="language-bash">$ json-server http://example.com/file.json
+    $ json-server http://jsonplaceholder.typicode.com/db
+    </code></pre>
+    <h3 id="generate-random-data">Generate random data</h3>
+    <p>Using JS instead of a JSON file, you can create data programmatically.</p>
+    <pre class="box-x"><code class="language-javascript">// index.js
+    module.exports = () =&gt; {
+    const data = { users: [] }
+    // Create 1000 users
+    for (let i = 0; i &lt; 1000; i++) {
+        data.users.push({ id: i, name: `user${i}` })
+    }
+    return data
+    }
+    </code></pre>
+    <pre class="box-x"><code class="language-bash">$ json-server index.js
+    </code></pre>
+    <p><strong>Tip</strong> use modules like <a href="https://truonghoailinh3103.github.io/Faker-js">Faker</a>, <a href="https://truonghoailinh3103.github.io/Casual">Casual</a>.</p>
+    <h3 id="https">HTTPS</h3>
+    <p>There are many ways to set up SSL in development. One simple way is to use <a href="https://github.com/typicode/hotel">hotel</a>.</p>
+    <h3 id="add-custom-routes">Add custom routes</h3>
+    <p>Create a <code>routes.json</code> file. Pay attention to start every route with <code>/</code>.</p>
+    <pre class="box-x"><code class="language-json">{
+    &quot;/api/*&quot;: &quot;/$1&quot;,
+    &quot;/:resource/:id/show&quot;: &quot;/:resource/:id&quot;,
+    &quot;/posts/:category&quot;: &quot;/posts?category=:category&quot;,
+    &quot;/articles?id=:id&quot;: &quot;/posts/:id&quot;
+    }
+    </code></pre>
+    <p>Start JSON Server with <code>--routes</code> option.</p>
+    <pre class="box-x"><code class="language-bash">json-server db.json --routes routes.json
+    </code></pre>
+    <p>Now you can access resources using additional routes.</p>
+    <pre class="box-x"><code class="language-sh">/api/posts # → /posts
+    /api/posts/1  # → /posts/1
+    /posts/1/show # → /posts/1
+    /posts/javascript # → /posts?category=javascript
+    /articles?id=1 # → /posts/1
+    </code></pre>
+    <h3 id="add-middlewares">Add middlewares</h3>
+    <p>You can add your middlewares from the CLI using <code>--middlewares</code> option:</p>
+    <pre class="box-x"><code class="language-js">// hello.js
+    module.exports = (req, res, next) =&gt; {
+    res.header(&#39;X-Hello&#39;, &#39;World&#39;)
+    next()
+    }
+    </code></pre>
+    <pre class="box-x"><code class="language-bash">json-server db.json --middlewares ./hello.js
+    json-server db.json --middlewares ./first.js ./second.js
+    </code></pre>
+    <h3 id="cli-usage">CLI usage</h3>
+    <pre class="box-x"><code>json-server [options] &lt;source&gt;
+
+    Options:
+    --config, -c       Path to config file           [default: &quot;json-server.json&quot;]
+    --port, -p         Set port                                    [default: 3000]
+    --host, -H         Set host                             [default: &quot;localhost&quot;]
+    --watch, -w        Watch file(s)                                     [boolean]
+    --routes, -r       Path to routes file
+    --middlewares, -m  Paths to middleware files                           [array]
+    --static, -s       Set static files directory
+    --read-only, --ro  Allow only GET requests                           [boolean]
+    --no-cors, --nc    Disable Cross-Origin Resource Sharing             [boolean]
+    --no-gzip, --ng    Disable GZIP Content-Encoding                     [boolean]
+    --snapshots, -S    Set snapshots directory                      [default: &quot;.&quot;]
+    --delay, -d        Add delay to responses (ms)
+    --id, -i           Set database id property (e.g. _id)         [default: &quot;id&quot;]
+    --foreignKeySuffix, --fks  Set foreign key suffix, (e.g. _id as in post_id)
+                                                                    [default: &quot;Id&quot;]
+    --quiet, -q        Suppress log messages from output                 [boolean]
+    --help, -h         Show help                                         [boolean]
+    --version, -v      Show version number                               [boolean]
+
+    Examples:
+    json-server db.json
+    json-server file.js
+    json-server http://example.com/db.json
+
+    https://github.com/typicode/json-server
+    </code></pre>
+    <p>You can also set options in a <code>json-server.json</code> configuration file.</p>
+    <pre class="box-x"><code class="language-json">{
+    &quot;port&quot;: 3000
+    }
+    </code></pre>
+    <h3 id="module">Module</h3>
+    <p>If you need to add authentication, validation, or <strong>any behavior</strong>, you can use the project as a module in combination with other Express middlewares.</p>
+    <h4 id="simple-example">Simple example</h4>
+    <pre class="box-x"><code class="language-sh">$ npm install json-server --save-dev
+    </code></pre>
+    <pre class="box-x"><code class="language-js">// server.js
+    const jsonServer = require(&#39;json-server&#39;)
+    const server = jsonServer.create()
+    const router = jsonServer.router(&#39;db.json&#39;)
+    const middlewares = jsonServer.defaults()
+
+    server.use(middlewares)
+    server.use(router)
+    server.listen(3000, () =&gt; {
+    console.log(&#39;JSON Server is running&#39;)
+    })
+    </code></pre>
+    <pre class="box-x"><code class="language-sh">$ node server.js
+    </code></pre>
+    <p>The path you provide to the <code>jsonServer.router</code> function  is relative to the directory from where you launch your node process. If you run the above code from another directory, it’s better to use an absolute path:</p>
+    <pre class="box-x"><code class="language-js">const path = require(&#39;path&#39;)
+    const router = jsonServer.router(path.join(__dirname, &#39;db.json&#39;))
+    </code></pre>
+    <p>For an in-memory database, simply pass an object to <code>jsonServer.router()</code>.</p>
+    <p>To add custom options (eg. <code>foreginKeySuffix</code>) pass in an object as the second argument to <code>jsonServer.router(&#39;db.json&#39;, { foreginKeySuffix: &#39;_id&#39; })</code>.</p>
+    <p>Please note also that <code>jsonServer.router()</code> can be used in existing Express projects.</p>
+    <h4 id="custom-routes-example">Custom routes example</h4>
+    <p>Let&#39;s say you want a route that echoes query parameters and another one that set a timestamp on every resource created.</p>
+    <pre class="box-x"><code class="language-js">const jsonServer = require(&#39;json-server&#39;)
+    const server = jsonServer.create()
+    const router = jsonServer.router(&#39;db.json&#39;)
+    const middlewares = jsonServer.defaults()
+
+    // Set default middlewares (logger, static, cors and no-cache)
+    server.use(middlewares)
+
+    // Add custom routes before JSON Server router
+    server.get(&#39;/echo&#39;, (req, res) =&gt; {
+    res.jsonp(req.query)
+    })
+
+    // To handle POST, PUT and PATCH you need to use a body-parser
+    // You can use the one used by JSON Server
+    server.use(jsonServer.bodyParser)
+    server.use((req, res, next) =&gt; {
+    if (req.method === &#39;POST&#39;) {
+        req.body.createdAt = Date.now()
+    }
+    // Continue to JSON Server router
+    next()
+    })
+
+    // Use default router
+    server.use(router)
+    server.listen(3000, () =&gt; {
+    console.log(&#39;JSON Server is running&#39;)
+    })
+    </code></pre>
+    <h4 id="access-control-example">Access control example</h4>
+    <pre class="box-x"><code class="language-js">const jsonServer = require(&#39;json-server&#39;)
+    const server = jsonServer.create()
+    const router = jsonServer.router(&#39;db.json&#39;)
+    const middlewares = jsonServer.defaults()
+
+    server.use(middlewares)
+    server.use((req, res, next) =&gt; {
+    if (isAuthorized(req)) { // add your authorization logic here
+    next() // continue to JSON Server router
+    } else {
+    res.sendStatus(401)
+    }
+    })
+    server.use(router)
+    server.listen(3000, () =&gt; {
+    console.log(&#39;JSON Server is running&#39;)
+    })
+    </code></pre>
+    <h4 id="custom-output-example">Custom output example</h4>
+    <p>To modify responses, overwrite <code>router.render</code> method:</p>
+    <pre class="box-x"><code class="language-javascript">// In this example, returned resources will be wrapped in a body property
+    router.render = (req, res) =&gt; {
+    res.jsonp({
+        body: res.locals.data
+    })
+    }
+    </code></pre>
+    <p>You can set your own status code for the response:</p>
+    <pre class="box-x"><code class="language-javascript">// In this example we simulate a server side error response
+    router.render = (req, res) =&gt; {
+    res.status(500).jsonp({
+        error: &quot;error message here&quot;
+    })
+    }
+    </code></pre>
+    <h4 id="rewriter-example">Rewriter example</h4>
+    <p>To add rewrite rules, use <code>jsonServer.rewriter()</code>:</p>
+    <pre class="box-x"><code class="language-javascript">// Add this before server.use(router)
+    server.use(jsonServer.rewriter({
+    &#39;/api/*&#39;: &#39;/$1&#39;,
+    &#39;/blog/:resource/:id/show&#39;: &#39;/:resource/:id&#39;
+    }))
+    </code></pre>
+    <h4 id="mounting-json-server-on-another-endpoint-example">Mounting JSON Server on another endpoint example</h4>
+    <p>Alternatively, you can also mount the router on <code>/api</code>.</p>
+    <pre class="box-x"><code class="language-javascript">server.use(&#39;/api&#39;, router)
+    </code></pre>
+    <h4 id="api">API</h4>
+    <p><strong><code>jsonServer.create()</code></strong></p>
+    <p>Returns an Express server.</p>
+    <p><strong><code>jsonServer.defaults([options])</code></strong></p>
+    <p>Returns middlewares used by JSON Server.</p>
+    <ul>
+    <li>
+        options
+        <ul>
+            <li><code>static</code> path to static files</li>
+            <li><code>logger</code> enable logger middleware (default: true)</li>
+            <li><code>bodyParser</code> enable body-parser middleware (default: true)</li>
+            <li><code>noCors</code> disable CORS (default: false)</li>
+            <li><code>readOnly</code> accept only GET requests (default: false)</li>
+        </ul>
+    </li>
+    </ul>
+    <p><strong><code>jsonServer.router([path|object], [options])</code></strong></p>
+    <p>Returns JSON Server router.</p>
+    <ul>
+    <li>options (see <a href="#cli-usage">CLI usage</a>)</li>
+    </ul>
+    <h3 id="deployment">Deployment</h3>
+    <p>You can deploy JSON Server. For example, create <code>vercel.js</code>:</p>
+    <pre class="box-x"><code class="language-javascript">
+        {
+            "version": 2,
+            "builds": [
+              {
+                "src": "api/server.js",
+                "use": "@now/node",
+                "config": {
+                  "includeFiles": ["db.json"]
+                }
+              }
+            ],
+            "routes": [
+              {
+                "src": "/(.*)",
+                "dest": "api/server.js"
+              }
+            ]
+        }
+    </code></pre>
+</body>
+</html>
