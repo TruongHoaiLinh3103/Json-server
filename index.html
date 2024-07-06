@@ -306,16 +306,16 @@ server.use(middlewares)
 
 // Add custom routes before JSON Server router
 server.get(&#39;/echo&#39;, (req, res) =&gt; {
-res.jsonp(req.query)
+    res.jsonp(req.query)
 })
 
 // To handle POST, PUT and PATCH you need to use a body-parser
 // You can use the one used by JSON Server
 server.use(jsonServer.bodyParser)
 server.use((req, res, next) =&gt; {
-if (req.method === &#39;POST&#39;) {
-    req.body.createdAt = Date.now()
-}
+    if (req.method === &#39;POST&#39;) {
+        req.body.createdAt = Date.now()
+    }
 // Continue to JSON Server router
 next()
 })
@@ -323,7 +323,7 @@ next()
 // Use default router
 server.use(router)
 server.listen(3000, () =&gt; {
-console.log(&#39;JSON Server is running&#39;)
+    console.log(&#39;JSON Server is running&#39;)
 })
     </code></pre>
     <h4 id="access-control-example">Access control example</h4>
@@ -334,40 +334,40 @@ const middlewares = jsonServer.defaults()
 
 server.use(middlewares)
 server.use((req, res, next) =&gt; {
-if (isAuthorized(req)) { // add your authorization logic here
-next() // continue to JSON Server router
-} else {
-res.sendStatus(401)
-}
+    if (isAuthorized(req)) { // add your authorization logic here
+    next() // continue to JSON Server router
+    } else {
+    res.sendStatus(401)
+    }
 })
 server.use(router)
 server.listen(3000, () =&gt; {
-console.log(&#39;JSON Server is running&#39;)
+    console.log(&#39;JSON Server is running&#39;)
 })
     </code></pre>
     <h4 id="custom-output-example">Custom output example</h4>
     <p>To modify responses, overwrite <code>router.render</code> method:</p>
     <pre class="box-x"><code class="language-javascript">// In this example, returned resources will be wrapped in a body property
 router.render = (req, res) =&gt; {
-res.jsonp({
-    body: res.locals.data
-})
+    res.jsonp({
+        body: res.locals.data
+    })
 }
     </code></pre>
     <p>You can set your own status code for the response:</p>
     <pre class="box-x"><code class="language-javascript">// In this example we simulate a server side error response
-    router.render = (req, res) =&gt; {
+router.render = (req, res) =&gt; {
     res.status(500).jsonp({
         error: &quot;error message here&quot;
     })
-    }
+}
     </code></pre>
     <h4 id="rewriter-example">Rewriter example</h4>
     <p>To add rewrite rules, use <code>jsonServer.rewriter()</code>:</p>
     <pre class="box-x"><code class="language-javascript">// Add this before server.use(router)
 server.use(jsonServer.rewriter({
-&#39;/api/*&#39;: &#39;/$1&#39;,
-&#39;/blog/:resource/:id/show&#39;: &#39;/:resource/:id&#39;
+    &#39;/api/*&#39;: &#39;/$1&#39;,
+    &#39;/blog/:resource/:id/show&#39;: &#39;/:resource/:id&#39;
 }))
     </code></pre>
     <h4 id="mounting-json-server-on-another-endpoint-example">Mounting JSON Server on another endpoint example</h4>
